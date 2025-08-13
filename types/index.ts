@@ -72,10 +72,10 @@ export type SubscriptionTier = {
 };
 
 export const SUBSCRIPTION_TIERS: SubscriptionTier[] = [
-  { id: 'tier1', name: 'Small Church', memberRange: '0–50', price: 10, maxMembers: 50 },
-  { id: 'tier2', name: 'Medium Church', memberRange: '51–150', price: 15, maxMembers: 150 },
-  { id: 'tier3', name: 'Large Church', memberRange: '151–499', price: 20, maxMembers: 499 },
-  { id: 'tier4', name: 'Mega Church', memberRange: '500+', price: 50, maxMembers: Infinity },
+  { id: 'tier1', name: 'New Church', memberRange: '0-50 members', price: 10, maxMembers: 50 },
+  { id: 'tier2', name: 'Growing Church', memberRange: '51-150 members', price: 15, maxMembers: 150 },
+  { id: 'tier3', name: 'Established Church', memberRange: '151-499 members', price: 20, maxMembers: 499 },
+  { id: 'tier4', name: 'Mega Church', memberRange: '500+ members', price: 50, maxMembers: Infinity },
 ];
 
 export interface ChurchRegistrationData {

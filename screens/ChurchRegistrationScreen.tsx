@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { 
   Text, 
   TextInput, 
   Button, 
   Card, 
-  RadioButton, 
   Checkbox,
   HelperText,
   ActivityIndicator 
@@ -32,8 +31,7 @@ export default function ChurchRegistrationScreen() {
     setValue,
   } = useForm<ChurchRegistrationData>({
     defaultValues: {
-      isHq: true,
-      wantsTrial: true,
+      wantsTrial: false,
       memberCount: 'tier1',
     },
   });
@@ -88,7 +86,17 @@ export default function ChurchRegistrationScreen() {
             <Controller
               control={control}
               name="churchName"
-              rules={{ required: 'Church name is required' }}
+              rules={{ 
+                required: 'Church name is required',
+                minLength: {
+                  value: 3,
+                  message: 'Church name must be at least 3 characters'
+                },
+                maxLength: {
+                  value: 100,
+                  message: 'Church name must be less than 100 characters'
+                }
+              }}
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   label="Church Name *"
@@ -96,6 +104,7 @@ export default function ChurchRegistrationScreen() {
                   onChangeText={onChange}
                   style={styles.input}
                   error={!!errors.churchName}
+                  placeholder="Enter your church's full name"
                 />
               )}
             />
@@ -106,7 +115,13 @@ export default function ChurchRegistrationScreen() {
             <Controller
               control={control}
               name="churchAddress"
-              rules={{ required: 'Church address is required' }}
+              rules={{ 
+                required: 'Church address is required',
+                minLength: {
+                  value: 10,
+                  message: 'Please enter a complete address'
+                }
+              }}
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   label="Church Address *"
@@ -116,6 +131,7 @@ export default function ChurchRegistrationScreen() {
                   multiline
                   numberOfLines={2}
                   error={!!errors.churchAddress}
+                  placeholder="Street address, city, state, zip code"
                 />
               )}
             />
@@ -129,16 +145,40 @@ export default function ChurchRegistrationScreen() {
               control={control}
               name="isHq"
               render={({ field: { onChange, value } }) => (
-                <RadioButton.Group onValueChange={(val) => onChange(val === 'true')} value={value.toString()}>
-                  <View style={styles.radioOption}>
-                    <RadioButton value="true" />
-                    <Text style={styles.radioLabel}>Headquarters (Main Church)</Text>
-                  </View>
-                  <View style={styles.radioOption}>
-                    <RadioButton value="false" />
-                    <Text style={styles.radioLabel}>Branch Church</Text>
-                  </View>
-                </RadioButton.Group>
+                <View style={styles.buttonGroup}>
+                  <Button
+                    mode={value === true ? "contained" : "outlined"}
+                    onPress={() => onChange(true)}
+                    style={[
+                      styles.selectionButton,
+                      value === true && styles.selectedButton
+                    ]}
+                    labelStyle={[
+                      styles.selectionButtonLabel,
+                      value === true && styles.selectedButtonLabel
+                    ]}
+                    buttonColor={value === true ? "#ff6b35" : "transparent"}
+                    textColor={value === true ? "#ffffff" : "#374151"}
+                  >
+                    Headquarters (Main Church)
+                  </Button>
+                  <Button
+                    mode={value === false ? "contained" : "outlined"}
+                    onPress={() => onChange(false)}
+                    style={[
+                      styles.selectionButton,
+                      value === false && styles.selectedButton
+                    ]}
+                    labelStyle={[
+                      styles.selectionButtonLabel,
+                      value === false && styles.selectedButtonLabel
+                    ]}
+                    buttonColor={value === false ? "#ff6b35" : "transparent"}
+                    textColor={value === false ? "#ffffff" : "#374151"}
+                  >
+                    Branch
+                  </Button>
+                </View>
               )}
             />
 
@@ -171,7 +211,17 @@ export default function ChurchRegistrationScreen() {
             <Controller
               control={control}
               name="adminName"
-              rules={{ required: 'Your name is required' }}
+              rules={{ 
+                required: 'Your name is required',
+                minLength: {
+                  value: 2,
+                  message: 'Name must be at least 2 characters'
+                },
+                pattern: {
+                  value: /^[a-zA-Z\s'-]+$/,
+                  message: 'Name can only contain letters, spaces, hyphens, and apostrophes'
+                }
+              }}
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   label="Your Name *"
@@ -179,6 +229,7 @@ export default function ChurchRegistrationScreen() {
                   onChangeText={onChange}
                   style={styles.input}
                   error={!!errors.adminName}
+                  placeholder="Enter your full name"
                 />
               )}
             />
@@ -193,14 +244,27 @@ export default function ChurchRegistrationScreen() {
               render={({ field: { onChange, value } }) => (
                 <View>
                   <Text style={styles.inputLabel}>Your Role *</Text>
-                  <RadioButton.Group onValueChange={onChange} value={value}>
+                  <View style={styles.buttonGroup}>
                     {ROLES.map((role) => (
-                      <View key={role} style={styles.radioOption}>
-                        <RadioButton value={role} />
-                        <Text style={styles.radioLabel}>{role}</Text>
-                      </View>
+                      <Button
+                        key={role}
+                        mode={value === role ? "contained" : "outlined"}
+                        onPress={() => onChange(role)}
+                        style={[
+                          styles.selectionButton,
+                          value === role && styles.selectedButton
+                        ]}
+                        labelStyle={[
+                          styles.selectionButtonLabel,
+                          value === role && styles.selectedButtonLabel
+                        ]}
+                        buttonColor={value === role ? "#ff6b35" : "transparent"}
+                        textColor={value === role ? "#ffffff" : "#374151"}
+                      >
+                        {role}
+                      </Button>
                     ))}
-                  </RadioButton.Group>
+                  </View>
                 </View>
               )}
             />
@@ -213,7 +277,7 @@ export default function ChurchRegistrationScreen() {
               name="adminPhone"
               rules={{ 
                 required: 'Phone number is required',
-                validate: (value) => validatePhone(value) || 'Please enter a valid phone number'
+                validate: (value) => validatePhone(value) || 'Please enter a valid phone number (e.g., +1 555-123-4567)'
               }}
               render={({ field: { onChange, value } }) => (
                 <TextInput
@@ -223,6 +287,7 @@ export default function ChurchRegistrationScreen() {
                   style={styles.input}
                   keyboardType="phone-pad"
                   error={!!errors.adminPhone}
+                  placeholder="(555) 123-4567"
                 />
               )}
             />
@@ -246,6 +311,7 @@ export default function ChurchRegistrationScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   error={!!errors.adminEmail}
+                  placeholder="pastor@yourchurch.com"
                 />
               )}
             />
@@ -255,24 +321,36 @@ export default function ChurchRegistrationScreen() {
 
             {/* Subscription */}
             <Text style={styles.sectionTitle}>Subscription Plan</Text>
+            <Text style={styles.sectionSubtitle}>
+              Choose the plan that best fits your congregation size. You can change plans anytime.
+            </Text>
             
             <Controller
               control={control}
               name="memberCount"
               render={({ field: { onChange, value } }) => (
-                <RadioButton.Group onValueChange={onChange} value={value}>
+                <View style={styles.buttonGroup}>
                   {SUBSCRIPTION_TIERS.map((tier) => (
-                    <View key={tier.id} style={styles.tierOption}>
-                      <RadioButton value={tier.id} />
-                      <View style={styles.tierInfo}>
-                        <Text style={styles.tierName}>{tier.name}</Text>
-                        <Text style={styles.tierDetails}>
-                          {tier.memberRange} members • ${tier.price}/month
-                        </Text>
-                      </View>
-                    </View>
+                    <Button
+                      key={tier.id}
+                      mode={value === tier.id ? "contained" : "outlined"}
+                      onPress={() => onChange(tier.id)}
+                      style={[
+                        styles.tierSelectionButton,
+                        value === tier.id && styles.selectedButton
+                      ]}
+                      labelStyle={[
+                        styles.tierButtonLabel,
+                        value === tier.id && styles.selectedButtonLabel
+                      ]}
+                      buttonColor={value === tier.id ? "#ff6b35" : "transparent"}
+                      textColor={value === tier.id ? "#ffffff" : "#374151"}
+                      contentStyle={styles.tierButtonContent}
+                    >
+                      {`${tier.name}\n${tier.memberRange} members • $${tier.price}/month`}
+                    </Button>
                   ))}
-                </RadioButton.Group>
+                </View>
               )}
             />
 
@@ -282,7 +360,7 @@ export default function ChurchRegistrationScreen() {
                   <Text style={styles.pricingTitle}>{selectedTier.name}</Text>
                   <Text style={styles.pricingPrice}>${selectedTier.price}/month</Text>
                   <Text style={styles.pricingDescription}>
-                    For churches with {selectedTier.memberRange} members
+                    For churches with {selectedTier.memberRange} 
                   </Text>
                 </Card.Content>
               </Card>
@@ -292,15 +370,20 @@ export default function ChurchRegistrationScreen() {
               control={control}
               name="wantsTrial"
               render={({ field: { onChange, value } }) => (
-                <View style={styles.checkboxContainer}>
+                <TouchableOpacity
+                  style={[styles.checkboxContainer, value && styles.checkboxContainerSelected]}
+                  onPress={() => onChange(!value)}
+                  activeOpacity={0.7}
+                >
                   <Checkbox
                     status={value ? 'checked' : 'unchecked'}
-                    onPress={() => onChange(!value)}
+                    color="#ff6b35"
+                    uncheckedColor="#d1d5db"
                   />
-                  <Text style={styles.checkboxLabel}>
-                    Start with 7-day free trial
+                  <Text style={[styles.checkboxLabel, value && styles.checkboxLabelSelected]}>
+                    Want a 7-day free trial? Tap Here!
                   </Text>
-                </View>
+                </TouchableOpacity>
               )}
             />
 
@@ -363,6 +446,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginTop: 20,
   },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
   input: {
     marginBottom: 8,
     backgroundColor: 'white',
@@ -372,35 +461,6 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 8,
     fontWeight: '500',
-  },
-  radioOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  radioLabel: {
-    fontSize: 16,
-    color: '#374151',
-    marginLeft: 8,
-  },
-  tierOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingVertical: 4,
-  },
-  tierInfo: {
-    marginLeft: 8,
-    flex: 1,
-  },
-  tierName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1e293b',
-  },
-  tierDetails: {
-    fontSize: 14,
-    color: '#64748b',
   },
   pricingCard: {
     marginVertical: 16,
@@ -427,12 +487,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f9fafb',
+  },
+  checkboxContainerSelected: {
+    borderColor: '#ff6b35',
+    backgroundColor: '#fff7ed',
+    elevation: 2,
+    shadowColor: '#ff6b35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   checkboxLabel: {
     fontSize: 16,
     color: '#374151',
-    marginLeft: 8,
+    marginLeft: 12,
     flex: 1,
+    fontWeight: '500',
+  },
+  checkboxLabelSelected: {
+    color: '#ea580c',
+    fontWeight: '600',
   },
   submitButton: {
     marginTop: 24,
@@ -442,5 +521,46 @@ const styles = StyleSheet.create({
   buttonLabel: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonGroup: {
+    marginBottom: 16,
+  },
+  selectionButton: {
+    marginBottom: 12,
+    borderRadius: 25,
+    borderColor: '#d1d5db',
+    borderWidth: 1,
+  },
+  selectedButton: {
+    borderColor: '#ff6b35',
+    elevation: 2,
+    shadowColor: '#ff6b35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  selectionButtonLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    paddingVertical: 8,
+  },
+  selectedButtonLabel: {
+    fontWeight: '600',
+  },
+  tierSelectionButton: {
+    marginBottom: 12,
+    borderRadius: 25,
+    borderColor: '#d1d5db',
+    borderWidth: 1,
+    minHeight: 60,
+  },
+  tierButtonContent: {
+    paddingVertical: 12,
+  },
+  tierButtonLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
