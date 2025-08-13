@@ -12,7 +12,7 @@ import { generateChurchCode } from '../lib/utils';
 
 export class DatabaseService {
   // Church operations
-  static async createChurch(data: ChurchRegistrationData): Promise<{ church: Church; admin: Admin } | null> {
+  static async createChurch(data: ChurchRegistrationData): Promise<{ church: Church; admin: Admin; needsEmailVerification: boolean } | null> {
     try {
       const churchCode = generateChurchCode();
       
@@ -33,18 +33,40 @@ export class DatabaseService {
 
       if (churchError || !church) {
         console.error('Error creating church:', churchError);
-        return null;
+        throw new Error(`Database error: ${churchError?.message || 'Failed to create church'}`);
       }
 
-      // Create admin user account
+      // Create admin user account with email verification
       const { data: authUser, error: authError } = await supabase.auth.signUp({
         email: data.adminEmail,
-        password: 'temporary_password_123!', // User will need to reset
+        password: data.adminPassword,
+        options: {
+          data: {
+            full_name: data.adminName,
+            role: data.adminRole,
+            church_name: data.churchName,
+            church_code: churchCode,
+          },
+          emailRedirectTo: undefined, // Will use default from Supabase settings
+        }
       });
 
-      if (authError || !authUser.user) {
+      if (authError) {
         console.error('Error creating admin auth:', authError);
-        return null;
+        
+        // If it's an email error, don't fail the entire registration
+        if (authError.message.includes('email') || authError.message.includes('confirmation')) {
+          console.warn('Email confirmation failed, but user account may have been created');
+          // Continue with the flow, but mark that email verification failed
+        } else {
+          // Clean up church record if auth creation fails for other reasons
+          await supabase.from('churches').delete().eq('id', church.id);
+          throw new Error(`Authentication error: ${authError.message}`);
+        }
+      }
+
+      if (!authUser.user) {
+        throw new Error('Failed to create user account');
       }
 
       // Create admin record
@@ -63,13 +85,42 @@ export class DatabaseService {
 
       if (adminError || !admin) {
         console.error('Error creating admin:', adminError);
-        return null;
+        // Clean up church and auth user if admin creation fails
+        await supabase.from('churches').delete().eq('id', church.id);
+        throw new Error(`Admin creation error: ${adminError?.message || 'Failed to create admin'}`);
       }
 
-      return { church, admin };
+      // Create initial subscription record if trial is wanted
+      if (data.wantsTrial) {
+        await this.createTrialSubscription(church.id);
+      }
+
+      return { 
+        church, 
+        admin, 
+        needsEmailVerification: !authUser.user.email_confirmed_at 
+      };
     } catch (error) {
       console.error('Error in createChurch:', error);
-      return null;
+      throw error;
+    }
+  }
+
+  static async createTrialSubscription(churchId: string): Promise<void> {
+    try {
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 days from now
+
+      await supabase
+        .from('subscriptions')
+        .insert({
+          church_id: churchId,
+          status: 'trialing',
+          current_period_end: trialEndDate.toISOString(),
+        });
+    } catch (error) {
+      console.error('Error creating trial subscription:', error);
+      // Don't throw here as it's not critical for church creation
     }
   }
 

@@ -46,21 +46,35 @@ export default function ChurchRegistrationScreen() {
       const result = await DatabaseService.createChurch(data);
       
       if (result) {
-        Alert.alert(
-          'Success!',
-          `Church registered successfully! Your church code is: ${result.church.church_code}`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.push('/thank-you-church'),
-            },
-          ]
-        );
+        if (result.needsEmailVerification) {
+          Alert.alert(
+            'Registration Successful!',
+            `Welcome to ChurchFeed! Your church code is: ${result.church.church_code}\n\nPlease check your email (${data.adminEmail}) to verify your account before signing in.`,
+            [
+              {
+                text: 'Continue',
+                onPress: () => router.push('/thank-you-church'),
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Registration Complete!',
+            `Church registered successfully! Your church code is: ${result.church.church_code}`,
+            [
+              {
+                text: 'Continue',
+                onPress: () => router.push('/thank-you-church'),
+              },
+            ]
+          );
+        }
       } else {
         Alert.alert('Error', 'Failed to register church. Please try again.');
       }
-    } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'An unexpected error occurred. Please try again.';
+      Alert.alert('Registration Error', errorMessage);
       console.error('Registration error:', error);
     } finally {
       setLoading(false);
@@ -317,6 +331,36 @@ export default function ChurchRegistrationScreen() {
             />
             <HelperText type="error" visible={!!errors.adminEmail}>
               {errors.adminEmail?.message}
+            </HelperText>
+
+            <Controller
+              control={control}
+              name="adminPassword"
+              rules={{ 
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters'
+                },
+                pattern: {
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                  message: 'Password must contain uppercase, lowercase, number, and special character'
+                }
+              }}
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  label="Password *"
+                  value={value}
+                  onChangeText={onChange}
+                  style={styles.input}
+                  secureTextEntry
+                  error={!!errors.adminPassword}
+                  placeholder="Create a strong password"
+                />
+              )}
+            />
+            <HelperText type="error" visible={!!errors.adminPassword}>
+              {errors.adminPassword?.message}
             </HelperText>
 
             {/* Subscription */}

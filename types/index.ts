@@ -87,6 +87,7 @@ export interface ChurchRegistrationData {
   adminRole: 'Head Pastor' | 'Pastor' | 'Secretary';
   adminPhone: string;
   adminEmail: string;
+  adminPassword: string;
   memberCount: 'tier1' | 'tier2' | 'tier3' | 'tier4';
   wantsTrial: boolean;
 }

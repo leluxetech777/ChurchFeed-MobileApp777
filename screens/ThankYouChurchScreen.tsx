@@ -21,8 +21,24 @@ export default function ThankYouChurchScreen() {
             <Text style={styles.message}>
               Your church has been set up and you're ready to start connecting with your congregation.
             </Text>
+            
+            <View style={styles.stepContainer}>
+              <View style={styles.step}>
+                <Text style={styles.stepNumber}>1</Text>
+                <Text style={styles.stepText}>Check your email for a verification link</Text>
+              </View>
+              <View style={styles.step}>
+                <Text style={styles.stepNumber}>2</Text>
+                <Text style={styles.stepText}>Click the verification link to activate your account</Text>
+              </View>
+              <View style={styles.step}>
+                <Text style={styles.stepNumber}>3</Text>
+                <Text style={styles.stepText}>Sign in with your email to start managing your church</Text>
+              </View>
+            </View>
+            
             <Text style={styles.instructions}>
-              You can now sign in to your admin account to start posting announcements and managing your church feed.
+              Please verify your email before signing in. Check your spam folder if you don't see the verification email.
             </Text>
             
             <Button
@@ -102,6 +118,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 32,
+  },
+  stepContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 16,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#ff6b35',
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 28,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 12,
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
   },
   loginButton: {
     width: '100%',
