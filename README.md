@@ -163,7 +163,3 @@ The app expects these backend API endpoints (implement using Supabase Edge Funct
 **Push notifications not working:**
 - Check Expo notification permissions
 - Test on physical device (doesn't work in simulator)
-
-## License
-
-This project is licensed under the MIT License.
