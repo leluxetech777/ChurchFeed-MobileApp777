@@ -1,29 +1,70 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import React, { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
+import 'react-native-url-polyfill/auto';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { AuthProvider } from '../contexts/AuthContext';
+import { ThemeProvider, useAppTheme } from '../contexts/ThemeContext';
+import { NotificationService, setupNotificationChannels } from '../services/notifications';
+import { StripeService } from '../services/stripe';
+
+function AppContent() {
+  const { theme } = useAppTheme();
+
+  useEffect(() => {
+    const initializeServices = async () => {
+      try {
+        // Initialize Stripe
+        await StripeService.initialize();
+        
+        // Initialize notifications
+        await NotificationService.initialize();
+        await setupNotificationChannels();
+      } catch (error) {
+        console.error('Error initializing services:', error);
+      }
+    };
+
+    initializeServices();
+  }, []);
+
+  return (
+    <PaperProvider theme={theme}>
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="church-registration" />
+          <Stack.Screen name="member-join" />
+          <Stack.Screen name="admin-login" />
+          <Stack.Screen name="feed" />
+          <Stack.Screen name="create-post" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="admin-dashboard" />
+          <Stack.Screen name="thank-you-church" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </AuthProvider>
+    </PaperProvider>
+  );
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
+    <ThemeProvider>
+      <AppContent />
     </ThemeProvider>
   );
 }
