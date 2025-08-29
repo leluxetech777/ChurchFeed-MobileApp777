@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Linking } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -142,7 +142,7 @@ export default function AdminDashboardScreen() {
             </Text>
             <Button
               mode="outlined"
-              onPress={() => {/* TODO: Open subscription management */}}
+              onPress={() => Linking.openURL('https://billing.stripe.com/p/login/test_aFa6oJgeC8MIaHycvC5Vu00')}
               style={styles.subscriptionButton}
             >
               Manage Subscription

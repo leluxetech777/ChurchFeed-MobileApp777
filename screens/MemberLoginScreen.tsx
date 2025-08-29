@@ -19,7 +19,7 @@ interface LoginData {
   password: string;
 }
 
-export default function AdminLoginScreen() {
+export default function MemberLoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ export default function AdminLoginScreen() {
   const onSubmit = async (data: LoginData) => {
     setLoading(true);
     try {
-      const result = await signIn(data.email, data.password, 'admin');
+      const result = await signIn(data.email, data.password, 'member');
       
       if (result.success) {
         router.replace('/feed');
@@ -54,11 +54,11 @@ export default function AdminLoginScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Text style={styles.iconText}>🔐</Text>
+            <Text style={styles.iconText}>👤</Text>
           </View>
-          <Text style={styles.title}>Admin Login</Text>
+          <Text style={styles.title}>Member Login</Text>
           <Text style={styles.subtitle}>
-            Sign in to manage your church feed!
+            Sign in to access your church feed!
           </Text>
         </View>
 
@@ -136,27 +136,27 @@ export default function AdminLoginScreen() {
             <Button
               mode="outlined"
               onPress={() => {
-                setValue('email', 'pastor@testchurch.com');
+                setValue('email', 'member@testchurch.com');
                 setValue('password', 'test123456');
               }}
               style={[styles.testButton, { marginTop: 16 }]}
               labelStyle={styles.testButtonLabel}
             >
-              🧪 Fill Test Admin Credentials
+              🧪 Fill Test Member Credentials
             </Button>
           </Card.Content>
         </Card>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Don't have an admin account?
+            Not a member yet?
           </Text>
           <Button
             mode="text"
-            onPress={() => router.push('/church-registration')}
+            onPress={() => router.push('/member-join')}
             labelStyle={styles.linkButtonLabel}
           >
-            Register Your Church
+            Join Church Feed
           </Button>
         </View>
 

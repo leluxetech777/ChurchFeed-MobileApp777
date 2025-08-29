@@ -164,7 +164,7 @@ export class DatabaseService {
   }
 
   // Member operations
-  static async createMember(data: MemberJoinData): Promise<Member | null> {
+  static async createMember(data: MemberJoinData & { user_id?: string }): Promise<Member | null> {
     try {
       const church = await this.getChurchByCode(data.churchCode);
       if (!church) {
@@ -174,6 +174,7 @@ export class DatabaseService {
       const { data: member, error } = await supabase
         .from('members')
         .insert({
+          user_id: data.user_id,
           name: data.name,
           phone: data.phone,
           email: data.email,
@@ -190,6 +191,26 @@ export class DatabaseService {
       return member;
     } catch (error) {
       console.error('Error in createMember:', error);
+      return null;
+    }
+  }
+
+  static async getMemberByUserId(userId: string): Promise<Member | null> {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error getting member by user ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getMemberByUserId:', error);
       return null;
     }
   }
@@ -293,7 +314,27 @@ export class DatabaseService {
         return [];
       }
 
-      return data || [];
+      // Transform flat data into nested structure expected by the frontend
+      const transformedData = (data || []).map((post: any) => ({
+        id: post.id,
+        church_id: post.church_id,
+        author_id: post.author_id,
+        content: post.content,
+        image_url: post.image_url,
+        target_branches: post.target_branches,
+        created_at: post.created_at,
+        author: {
+          id: post.author_id,
+          name: post.author_name,
+          role: post.author_role,
+        },
+        church: {
+          id: post.church_id,
+          name: post.church_name,
+        }
+      }));
+
+      return transformedData;
     } catch (error) {
       console.error('Error in getChurchFeed:', error);
       return [];

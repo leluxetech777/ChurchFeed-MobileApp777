@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
                   description="Manage billing and plans"
                   left={(props) => <List.Icon {...props} icon="credit-card" />}
                   right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                  onPress={() => {/* TODO: Implement subscription management */}}
+                  onPress={() => Linking.openURL('https://billing.stripe.com/p/login/test_aFa6oJgeC8MIaHycvC5Vu00')}
                 />
                 <Divider />
               </>

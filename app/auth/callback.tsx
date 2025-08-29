@@ -17,7 +17,7 @@ export default function AuthCallbackScreen() {
       try {
         if (type === 'signup' && token_hash) {
           // Handle email confirmation
-          const { data, error } = await supabase.auth.verifyOtp({
+          const { error } = await supabase.auth.verifyOtp({
             token_hash,
             type: 'signup'
           });

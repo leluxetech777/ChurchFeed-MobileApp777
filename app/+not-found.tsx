@@ -12,7 +12,7 @@ export default function NotFoundScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Page Not Found</Text>
         <Text style={styles.message}>
-          The page you're looking for doesn't exist.
+          The page you&apos;re looking for doesn&apos;t exist.
         </Text>
         <Button
           mode="contained"

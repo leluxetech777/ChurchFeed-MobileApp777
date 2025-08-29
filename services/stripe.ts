@@ -1,5 +1,6 @@
 import { initStripe } from '@stripe/stripe-react-native';
-import { SUBSCRIPTION_TIERS, SubscriptionTier } from '../types';
+import { SubscriptionTier } from '../types';
+import { api } from './apiClient';
 
 export class StripeService {
   private static initialized = false;
@@ -158,15 +159,8 @@ export class StripeService {
   }
 
   static getPriceIdForTier(tier: SubscriptionTier): string {
-    // In a real implementation, these would be your actual Stripe Price IDs
-    const priceIds = {
-      tier1: 'price_tier1_monthly_10usd', // $10/month for 0-50 members
-      tier2: 'price_tier2_monthly_15usd', // $15/month for 51-150 members
-      tier3: 'price_tier3_monthly_20usd', // $20/month for 151-499 members
-      tier4: 'price_tier4_monthly_50usd', // $50/month for 500+ members
-    };
-    
-    return priceIds[tier.id];
+    // The backend will map these tier IDs to actual Stripe Price IDs
+    return tier.id; // Just pass the tier ID, backend handles the mapping
   }
 
   static async getSubscriptionStatus(subscriptionId: string) {
@@ -185,6 +179,47 @@ export class StripeService {
       return await response.json();
     } catch (error) {
       console.error('Error getting subscription status:', error);
+      throw error;
+    }
+  }
+
+  static async createCheckoutSession(
+    tier: SubscriptionTier,
+    churchData: {
+      churchName: string;
+      adminEmail: string;
+      adminName: string;
+      churchId?: string;
+    },
+    wantsTrial: boolean = false
+  ) {
+    try {
+      // Import api here to get the current base URL (which includes tunnel URL if available)
+      const { api } = await import('./apiClient');
+      const baseUrl = api.getBaseUrl();
+      
+      console.log('💳 Creating checkout session with base URL:', baseUrl);
+      
+      const response = await api.post('/create-checkout-session', {
+        priceId: this.getPriceIdForTier(tier),
+        successUrl: `${baseUrl}/payment-redirect`,
+        cancelUrl: 'churchfeed://church-registration',
+        customerEmail: churchData.adminEmail,
+        customerName: churchData.adminName,
+        churchName: churchData.churchName,
+        churchId: churchData.churchId,
+        trialDays: wantsTrial ? 7 : 0,
+        mode: 'subscription',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
       throw error;
     }
   }
@@ -227,6 +262,11 @@ POST /create-subscription
 - Creates a Stripe subscription for the customer
 - Stores subscription details in your database
 - Returns subscription details
+
+POST /create-checkout-session
+- Creates a Stripe Checkout session for subscription signup
+- Returns checkout session URL
+- Body: { priceId, successUrl, cancelUrl, customerEmail, customerName, churchName, churchId?, trialDays?, mode }
 
 POST /update-subscription
 - Updates an existing subscription (change plan)

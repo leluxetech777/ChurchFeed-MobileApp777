@@ -13,11 +13,15 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
+import { openBrowserAsync } from 'expo-web-browser';
 import { DatabaseService } from '../services/database';
+import { StripeService } from '../services/stripe';
 import { ChurchRegistrationData, SUBSCRIPTION_TIERS } from '../types';
 import { validateEmail, validatePhone } from '../lib/utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ROLES = ['Head Pastor', 'Pastor', 'Secretary'] as const;
+const PENDING_REGISTRATION_KEY = 'churchfeed_pending_registration';
 
 export default function ChurchRegistrationScreen() {
   const router = useRouter();
@@ -43,35 +47,39 @@ export default function ChurchRegistrationScreen() {
   const onSubmit = async (data: ChurchRegistrationData) => {
     setLoading(true);
     try {
-      const result = await DatabaseService.createChurch(data);
+      // Get the selected subscription tier
+      const selectedTierData = SUBSCRIPTION_TIERS.find(tier => tier.id === data.memberCount);
       
-      if (result) {
-        if (result.needsEmailVerification) {
-          Alert.alert(
-            'Registration Successful!',
-            `Welcome to ChurchFeed! Your church code is: ${result.church.church_code}\n\nPlease check your email (${data.adminEmail}) to verify your account before signing in.`,
-            [
-              {
-                text: 'Continue',
-                onPress: () => router.push('/thank-you-church'),
-              },
-            ]
-          );
-        } else {
-          Alert.alert(
-            'Registration Complete!',
-            `Church registered successfully! Your church code is: ${result.church.church_code}`,
-            [
-              {
-                text: 'Continue',
-                onPress: () => router.push('/thank-you-church'),
-              },
-            ]
-          );
-        }
-      } else {
-        Alert.alert('Error', 'Failed to register church. Please try again.');
+      if (!selectedTierData) {
+        throw new Error('Invalid subscription tier selected');
       }
+      
+      // Store registration data in AsyncStorage so it survives app backgrounding during checkout
+      const pendingData = {
+        registrationData: data,
+        selectedTier: selectedTierData,
+        timestamp: Date.now()
+      };
+      
+      await AsyncStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(pendingData));
+      console.log('💾 Stored pending registration data for checkout survival');
+      
+      // Create Stripe checkout session with registration data in metadata
+      const checkoutUrl = await StripeService.createCheckoutSession(
+        selectedTierData,
+        {
+          churchName: data.churchName,
+          adminEmail: data.adminEmail,
+          adminName: data.adminName,
+          churchId: 'pending', // Will be set after church creation
+        },
+        data.wantsTrial
+      );
+      
+      console.log('🚀 Opening Stripe Checkout...');
+      // Open Stripe Checkout
+      await openBrowserAsync(checkoutUrl);
+      
     } catch (error: any) {
       const errorMessage = error?.message || 'An unexpected error occurred. Please try again.';
       Alert.alert('Registration Error', errorMessage);
@@ -439,7 +447,7 @@ export default function ChurchRegistrationScreen() {
               loading={loading}
               disabled={loading}
             >
-              {loading ? 'Registering...' : 'Register Church'}
+              {loading ? 'Processing...' : 'Continue to Payment'}
             </Button>
           </Card.Content>
         </Card>

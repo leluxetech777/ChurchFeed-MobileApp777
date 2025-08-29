@@ -12,7 +12,10 @@ CREATE TABLE churches (
     parent_hq_id UUID REFERENCES churches(id),
     church_code TEXT UNIQUE NOT NULL,
     subscription_tier TEXT NOT NULL CHECK (subscription_tier IN ('tier1', 'tier2', 'tier3', 'tier4')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    stripe_customer_id TEXT UNIQUE,
+    subscription_status TEXT DEFAULT 'pending' CHECK (subscription_status IN ('pending', 'active', 'past_due', 'canceled', 'trialing')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Admins table
@@ -28,9 +31,10 @@ CREATE TABLE admins (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Members table (no auth required)
+-- Members table (with auth support)
 CREATE TABLE members (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     phone TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -113,21 +117,23 @@ CREATE POLICY "Admins can update their own records" ON admins
     FOR UPDATE USING (user_id = auth.uid());
 
 -- Members policies
-CREATE POLICY "Members are viewable by admins of the church" ON members
+CREATE POLICY "Members are viewable by admins of the church or the member themselves" ON members
     FOR SELECT USING (
         church_id IN (
             SELECT church_id FROM admins WHERE user_id = auth.uid()
-        )
+        ) OR
+        user_id = auth.uid()
     );
 
-CREATE POLICY "Members can be inserted by anyone" ON members
-    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Members can be inserted by authenticated users" ON members
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Members can be updated by admins of the church" ON members
+CREATE POLICY "Members can be updated by admins of the church or the member themselves" ON members
     FOR UPDATE USING (
         church_id IN (
             SELECT church_id FROM admins WHERE user_id = auth.uid()
-        )
+        ) OR
+        user_id = auth.uid()
     );
 
 -- Posts policies
@@ -137,7 +143,7 @@ CREATE POLICY "Posts are viewable by members and admins of the church" ON posts
             SELECT church_id FROM admins WHERE user_id = auth.uid()
         ) OR
         church_id IN (
-            SELECT church_id FROM members WHERE device_token = current_setting('app.device_token', true)
+            SELECT church_id FROM members WHERE user_id = auth.uid()
         )
     );
 

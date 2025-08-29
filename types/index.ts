@@ -23,6 +23,7 @@ export interface Admin {
 
 export interface Member {
   id: string;
+  user_id: string;
   name: string;
   phone: string;
   email: string;
@@ -97,4 +98,5 @@ export interface MemberJoinData {
   phone: string;
   email: string;
   churchCode: string;
+  password: string;
 }

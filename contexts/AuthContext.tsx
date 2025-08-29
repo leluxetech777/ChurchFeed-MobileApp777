@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signIn: (email: string, password: string, role?: 'admin' | 'member') => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   registerMember: (memberData: any) => Promise<{ success: boolean; member?: Member; error?: string }>;
   currentMember: Member | null;
@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserData = async (supabaseUser: SupabaseUser) => {
     try {
+      // Check if user is an admin
       const admin = await DatabaseService.getAdminByUserId(supabaseUser.id);
       
       if (admin) {
@@ -80,13 +81,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           church_id: admin.church_id,
           admin,
         });
+        return;
+      }
+
+      // Check if user is a member
+      const member = await DatabaseService.getMemberByUserId(supabaseUser.id);
+      
+      if (member) {
+        setUser({
+          id: supabaseUser.id,
+          role: 'member',
+          church_id: member.church_id,
+          member,
+        });
+        setCurrentMember(member);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
     }
   };
 
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const signIn = async (email: string, password: string, role?: 'admin' | 'member'): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -116,7 +131,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const registerMember = async (memberData: any): Promise<{ success: boolean; member?: Member; error?: string }> => {
     try {
-      const member = await DatabaseService.createMember(memberData);
+      // Create auth user first
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: memberData.email,
+        password: memberData.password,
+      });
+
+      if (authError) {
+        return { success: false, error: authError.message };
+      }
+
+      if (!authData.user) {
+        return { success: false, error: 'Failed to create user account' };
+      }
+
+      // Create member record
+      const member = await DatabaseService.createMember({
+        ...memberData,
+        user_id: authData.user.id,
+      });
       
       if (member) {
         await saveMemberToStorage(member);

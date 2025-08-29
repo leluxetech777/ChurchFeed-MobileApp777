@@ -175,6 +175,36 @@ export default function MemberJoinScreen() {
               Ask your church admin for the 6-character church code
             </HelperText>
 
+            <Controller
+              control={control}
+              name="password"
+              rules={{ 
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters'
+                },
+                pattern: {
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+                  message: 'Password must contain uppercase, lowercase, number, and special character'
+                }
+              }}
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  label="Create Password *"
+                  value={value}
+                  onChangeText={onChange}
+                  style={styles.input}
+                  secureTextEntry
+                  error={!!errors.password}
+                  placeholder="Create a secure password"
+                />
+              )}
+            />
+            <HelperText type="error" visible={!!errors.password}>
+              {errors.password?.message}
+            </HelperText>
+
             <Button
               mode="contained"
               onPress={handleSubmit(onSubmit)}

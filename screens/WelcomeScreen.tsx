@@ -79,16 +79,26 @@ export default function WelcomeScreen() {
           </Card>
         </View>
 
-        {/* Admin Login Link */}
+        {/* Login Links */}
         <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an admin account?</Text>
-          <Button
-            mode="text"
-            onPress={() => router.push('/admin-login')}
-            labelStyle={styles.loginButtonLabel}
-          >
-            Admin Login
-          </Button>
+          <Text style={styles.loginText}>Already have an account?</Text>
+          <View style={styles.loginButtons}>
+            <Button
+              mode="text"
+              onPress={() => router.push('/admin-login')}
+              labelStyle={styles.loginButtonLabel}
+            >
+              Admin Login
+            </Button>
+            <Text style={styles.loginSeparator}>•</Text>
+            <Button
+              mode="text"
+              onPress={() => router.push('/member-login')}
+              labelStyle={styles.loginButtonLabel}
+            >
+              Member Login
+            </Button>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -196,6 +206,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748b',
     marginBottom: 8,
+  },
+  loginButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginSeparator: {
+    fontSize: 14,
+    color: '#64748b',
+    marginHorizontal: 8,
   },
   loginButtonLabel: {
     fontSize: 14,

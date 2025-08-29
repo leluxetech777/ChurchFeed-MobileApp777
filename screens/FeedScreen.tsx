@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions 
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Text, 
   Card, 
@@ -54,14 +55,9 @@ function PostItem({ post }: PostItemProps) {
               </Text>
             </View>
             {post.church?.name && (
-              <Chip 
-                mode="outlined" 
-                compact 
-                style={styles.churchChip}
-                textStyle={styles.chipText}
-              >
-                {post.church.name}
-              </Chip>
+              <Text style={styles.churchName}>
+                📍 {post.church.name}
+              </Text>
             )}
           </View>
         </View>
@@ -149,59 +145,84 @@ export default function FeedScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar style="dark" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Loading feed...</Text>
-        </View>
+        <StatusBar style="light" />
+        <LinearGradient
+          colors={['#ff6b35', '#8b5cf6', '#3b82f6', '#ffffff']}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="white" />
+            <Text style={styles.loadingText}>Loading feed...</Text>
+          </View>
+        </LinearGradient>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Church Feed</Text>
-        <View style={styles.headerActions}>
-          {isAdmin && (
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={['#ff6b35', '#8b5cf6', '#3b82f6', '#ffffff']}
+        style={styles.gradient}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Church Feed</Text>
+          <View style={styles.headerActions}>
+            {isAdmin && (
+              <IconButton
+                icon="account-group"
+                size={24}
+                iconColor="white"
+                onPress={() => router.push('/admin-dashboard')}
+              />
+            )}
             <IconButton
-              icon="account-group"
+              icon="account-circle"
               size={24}
-              onPress={() => router.push('/admin-dashboard')}
+              iconColor="white"
+              onPress={() => router.push('/profile')}
             />
-          )}
-          <IconButton
-            icon="account-circle"
-            size={24}
-            onPress={() => router.push('/profile')}
-          />
+          </View>
         </View>
-      </View>
 
-      {/* Feed */}
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.feedContainer,
-          posts.length === 0 && styles.feedContainerEmpty
-        ]}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
-            colors={['#6366f1']}
-          />
-        }
-        ListEmptyComponent={renderEmptyState}
-        showsVerticalScrollIndicator={false}
-      />
+        {/* Feed */}
+        <FlatList
+          data={posts}
+          renderItem={renderPost}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.feedContainer,
+            posts.length === 0 && styles.feedContainerEmpty
+          ]}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              colors={['#ff6b35']}
+            />
+          }
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+        />
 
-      {/* Create Post FAB (Admin Only) */}
+        {/* Bottom Blur Overlay for Engagement */}
+        <LinearGradient
+          colors={[
+            'transparent', 
+            'rgba(255, 255, 255, 0.2)', 
+            'rgba(255, 255, 255, 0.6)', 
+            'rgba(255, 255, 255, 0.9)', 
+            'rgba(255, 255, 255, 1.0)'
+          ]}
+          style={styles.bottomBlur}
+          pointerEvents="none"
+        />
+
+      </LinearGradient>
+
+      {/* Create Post FAB (Admin Only) - Outside gradient to avoid blur interference */}
       {isAdmin && (
         <FAB
           icon="plus"
@@ -217,7 +238,9 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+  },
+  gradient: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -225,17 +248,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: 'white',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(10px)',
+    zIndex: 300, // Above everything including blur
+    elevation: 300, // For Android
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1e293b',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   headerActions: {
     flexDirection: 'row',
@@ -248,7 +272,10 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#64748b',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   feedContainer: {
     padding: 16,
@@ -297,13 +324,11 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginLeft: 4,
   },
-  churchChip: {
-    alignSelf: 'flex-start',
-    height: 24,
+  churchName: {
+    fontSize: 13,
+    color: '#64748b',
     marginTop: 4,
-  },
-  chipText: {
-    fontSize: 12,
+    fontStyle: 'italic',
   },
   postText: {
     fontSize: 16,
@@ -339,20 +364,41 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1e293b',
+    color: 'white',
     marginBottom: 8,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   emptyText: {
     fontSize: 16,
-    color: '#64748b',
+    color: 'white',
     textAlign: 'center',
     lineHeight: 24,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  bottomBlur: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 280, // Increased height
+    zIndex: 100, // Above posts, below buttons
+    elevation: 100, // For Android
   },
   fab: {
     position: 'absolute',
     right: 16,
     bottom: 16,
-    backgroundColor: '#6366f1',
+    backgroundColor: '#ff6b35',
+    zIndex: 9999, // Maximum z-index
+    elevation: 9999, // Maximum elevation for Android
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
   },
 });
