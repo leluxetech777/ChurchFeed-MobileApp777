@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Text, 
   TextInput, 
@@ -12,7 +13,7 @@ import {
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,6 +33,7 @@ export default function CreatePostScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [branches, setBranches] = useState<Church[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const {
     control,
@@ -177,17 +179,32 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar style="dark" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <IconButton icon="arrow-left" onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>Create Announcement</Text>
-        <View style={{ width: 48 }} />
-      </View>
+      {/* Header with gradient accent */}
+      <LinearGradient
+        colors={['#ff6b35', '#8b5cf6']}
+        style={[styles.headerGradient, { paddingTop: insets.top }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+      
+        {/* Header */}
+        <View style={styles.header}>
+          <IconButton icon="arrow-left" iconColor="white" onPress={() => router.back()} />
+          <Text style={styles.headerTitle}>Create Announcement</Text>
+          <View style={{ width: 48 }} />
+        </View>
+      </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={[styles.content, { 
+          paddingBottom: insets.bottom + 40 
+        }]}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <Card style={styles.formCard} elevation={2}>
           <Card.Content style={styles.cardContent}>
             {/* Post Content */}
@@ -326,7 +343,7 @@ export default function CreatePostScreen() {
           </Card.Content>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -335,27 +352,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  headerGradient: {
+    paddingBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    paddingVertical: 8,
-    backgroundColor: 'white',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#1e293b',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   content: {
     flexGrow: 1,
-    padding: 16,
+    paddingHorizontal: 20,
   },
   formCard: {
     backgroundColor: 'white',

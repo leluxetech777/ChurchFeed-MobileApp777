@@ -50,8 +50,19 @@ CREATE TABLE posts (
     author_id UUID REFERENCES admins(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     image_url TEXT,
+    video_url TEXT,
     target_branches UUID[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Reactions table
+CREATE TABLE reactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    reaction_type TEXT NOT NULL CHECK (reaction_type IN ('heart', 'like', 'prayer', 'praise', 'heart_hands')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(post_id, user_id, reaction_type)
 );
 
 -- Subscriptions table
@@ -73,6 +84,8 @@ CREATE INDEX idx_admins_user ON admins(user_id);
 CREATE INDEX idx_members_church ON members(church_id);
 CREATE INDEX idx_posts_church ON posts(church_id);
 CREATE INDEX idx_posts_created ON posts(created_at DESC);
+CREATE INDEX idx_reactions_post ON reactions(post_id);
+CREATE INDEX idx_reactions_user ON reactions(user_id);
 CREATE INDEX idx_subscriptions_church ON subscriptions(church_id);
 
 -- Row Level Security (RLS) Policies
@@ -82,6 +95,7 @@ ALTER TABLE churches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Churches policies
@@ -175,6 +189,35 @@ CREATE POLICY "Subscriptions can be managed by admins of the church" ON subscrip
             SELECT church_id FROM admins WHERE user_id = auth.uid()
         )
     );
+
+-- Reactions policies
+CREATE POLICY "Reactions are viewable by members and admins of the church" ON reactions
+    FOR SELECT USING (
+        post_id IN (
+            SELECT posts.id FROM posts 
+            WHERE posts.church_id IN (
+                SELECT church_id FROM admins WHERE user_id = auth.uid()
+            ) OR posts.church_id IN (
+                SELECT church_id FROM members WHERE user_id = auth.uid()
+            )
+        )
+    );
+
+CREATE POLICY "Reactions can be created by authenticated users" ON reactions
+    FOR INSERT WITH CHECK (
+        user_id = auth.uid() AND
+        post_id IN (
+            SELECT posts.id FROM posts 
+            WHERE posts.church_id IN (
+                SELECT church_id FROM admins WHERE user_id = auth.uid()
+            ) OR posts.church_id IN (
+                SELECT church_id FROM members WHERE user_id = auth.uid()
+            )
+        )
+    );
+
+CREATE POLICY "Users can delete their own reactions" ON reactions
+    FOR DELETE USING (user_id = auth.uid());
 
 -- Functions for generating unique church codes
 CREATE OR REPLACE FUNCTION generate_unique_church_code()

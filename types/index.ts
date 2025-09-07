@@ -42,6 +42,24 @@ export interface Post {
   created_at: string;
   author?: Admin;
   church?: Church;
+  reactions?: PostReaction[];
+  userReactions?: string[];
+}
+
+export type ReactionType = 'heart' | 'like' | 'prayer' | 'praise' | 'heart_hands';
+
+export interface Reaction {
+  id: string;
+  post_id: string;
+  user_id: string;
+  reaction_type: ReactionType;
+  created_at: string;
+}
+
+export interface PostReaction {
+  type: ReactionType;
+  count: number;
+  userReacted: boolean;
 }
 
 export interface Subscription {

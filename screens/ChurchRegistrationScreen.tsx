@@ -11,7 +11,8 @@ import {
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useForm, Controller } from 'react-hook-form';
 import { openBrowserAsync } from 'expo-web-browser';
 import { DatabaseService } from '../services/database';
@@ -26,6 +27,7 @@ const PENDING_REGISTRATION_KEY = 'churchfeed_pending_registration';
 export default function ChurchRegistrationScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
   
   const {
     control,
@@ -90,9 +92,20 @@ export default function ChurchRegistrationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <View style={styles.container}>
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={['#ff6b35', '#8b5cf6', '#3b82f6', '#ffffff']}
+        style={styles.backgroundGradient}
+        locations={[0, 0.3, 0.7, 1]}
+      >
+        <ScrollView 
+          contentContainerStyle={[styles.content, { 
+            paddingTop: insets.top + 40,
+            paddingBottom: insets.bottom + 40 
+          }]}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.header}>
           <Text style={styles.title}>Register Your Church</Text>
           <Text style={styles.subtitle}>
@@ -451,19 +464,22 @@ export default function ChurchRegistrationScreen() {
             </Button>
           </Card.Content>
         </Card>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+  },
+  backgroundGradient: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
   content: {
     flexGrow: 1,
-    padding: 20,
   },
   header: {
     alignItems: 'center',

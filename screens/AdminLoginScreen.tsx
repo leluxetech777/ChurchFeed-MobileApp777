@@ -9,8 +9,9 @@ import {
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { validateEmail } from '../lib/utils';
 
@@ -23,6 +24,7 @@ export default function AdminLoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
   
   const {
     control,
@@ -49,9 +51,20 @@ export default function AdminLoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <View style={styles.container}>
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={['#ff6b35', '#8b5cf6', '#3b82f6', '#ffffff']}
+        style={styles.backgroundGradient}
+        locations={[0, 0.3, 0.7, 1]}
+      >
+        <ScrollView 
+          contentContainerStyle={[styles.content, { 
+            paddingTop: insets.top + 40,
+            paddingBottom: insets.bottom + 40 
+          }]}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.header}>
           <View style={styles.iconContainer}>
             <Text style={styles.iconText}>🔐</Text>
@@ -168,19 +181,22 @@ export default function AdminLoginScreen() {
         >
           Back to Welcome
         </Button>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+  },
+  backgroundGradient: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
   content: {
     flexGrow: 1,
-    padding: 20,
   },
   header: {
     alignItems: 'center',

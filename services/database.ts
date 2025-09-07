@@ -6,7 +6,10 @@ import {
   Post, 
   Subscription, 
   ChurchRegistrationData, 
-  MemberJoinData 
+  MemberJoinData,
+  Reaction,
+  ReactionType,
+  PostReaction
 } from '../types';
 import { generateChurchCode } from '../lib/utils';
 
@@ -144,6 +147,26 @@ export class DatabaseService {
     }
   }
 
+  static async getChurchById(id: string): Promise<Church | null> {
+    try {
+      const { data, error } = await supabase
+        .from('churches')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error getting church by id:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getChurchById:', error);
+      return null;
+    }
+  }
+
   static async getChurchBranches(hqId: string): Promise<Church[]> {
     try {
       const { data, error } = await supabase
@@ -234,6 +257,26 @@ export class DatabaseService {
     }
   }
 
+  static async getChurchMembers(churchId: string): Promise<Member[]> {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('church_id', churchId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error getting church members:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getChurchMembers:', error);
+      return [];
+    }
+  }
+
   // Admin operations
   static async getAdminByUserId(userId: string): Promise<Admin | null> {
     try {
@@ -272,19 +315,30 @@ export class DatabaseService {
     churchId: string, 
     authorId: string, 
     content: string, 
-    imageUrl?: string, 
+    mediaUrl?: string,
+    mediaType?: 'image' | 'video',
     targetBranches?: string[]
   ): Promise<Post | null> {
     try {
+      const insertData: any = {
+        church_id: churchId,
+        author_id: authorId,
+        content,
+        target_branches: targetBranches,
+      };
+
+      // Set the appropriate URL field based on media type
+      if (mediaUrl && mediaType) {
+        if (mediaType === 'image') {
+          insertData.image_url = mediaUrl;
+        } else if (mediaType === 'video') {
+          insertData.video_url = mediaUrl;
+        }
+      }
+
       const { data, error } = await supabase
         .from('posts')
-        .insert({
-          church_id: churchId,
-          author_id: authorId,
-          content,
-          image_url: imageUrl,
-          target_branches: targetBranches,
-        })
+        .insert(insertData)
         .select(`
           *,
           author:admins(*),
@@ -410,6 +464,92 @@ export class DatabaseService {
     } catch (error) {
       console.error('Error in getChurchSubscription:', error);
       return null;
+    }
+  }
+
+  // Reaction operations
+  static async setReaction(postId: string, userId: string, reactionType: ReactionType): Promise<Reaction | null> {
+    try {
+      // Use upsert to replace any existing reaction for this user on this post
+      const { data, error } = await supabase
+        .from('reactions')
+        .upsert({
+          post_id: postId,
+          user_id: userId,
+          reaction_type: reactionType,
+        }, {
+          onConflict: 'post_id,user_id'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error setting reaction:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in setReaction:', error);
+      return null;
+    }
+  }
+
+  static async removeReaction(postId: string, userId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error removing reaction:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in removeReaction:', error);
+      return false;
+    }
+  }
+
+  static async getPostReactions(postId: string, userId?: string): Promise<PostReaction[]> {
+    try {
+      const { data, error } = await supabase
+        .from('reactions')
+        .select('reaction_type, user_id')
+        .eq('post_id', postId);
+
+      if (error) {
+        console.error('Error getting post reactions:', error);
+        return [];
+      }
+
+      // Find user's current reaction if any
+      let userReactionType: ReactionType | null = null;
+      if (userId) {
+        const userReaction = (data || []).find(r => r.user_id === userId);
+        userReactionType = userReaction ? userReaction.reaction_type as ReactionType : null;
+      }
+
+      // Group reactions by type and count
+      const reactionCounts = (data || []).reduce((acc: Record<ReactionType, number>, reaction) => {
+        const type = reaction.reaction_type as ReactionType;
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<ReactionType, number>);
+
+      // Convert to array format with user reaction status
+      return Object.entries(reactionCounts).map(([type, count]) => ({
+        type: type as ReactionType,
+        count,
+        userReacted: userReactionType === type,
+      }));
+    } catch (error) {
+      console.error('Error in getPostReactions:', error);
+      return [];
     }
   }
 }
